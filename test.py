@@ -1,15 +1,21 @@
 import tkinter as tk
 from tkinter import scrolledtext
-import subprocess
-import threading
+from datetime import datetime
+import getpass
+import platform
 
 class ConsoleEmulator:
     def __init__(self):
+        # Создаём окно с нужным заголовком и размером
         self.root = tk.Tk()
-        self.root.title("Эмулятор консоли")
-        self.root.geometry("800x600")
+        # Получаем имя пользователя и название компьютера
+        username = getpass.getuser()
+        device_name = platform.node()
+        self.root.title(f"Эмулятор - [{username}@{device_name}]")
         
-        # Текстовое поле для вывода
+        # Настраиваем поле вывода
+        # В нём будет отображаться история команд
+        # И сообщения об их выполнении
         self.output_area = scrolledtext.ScrolledText(
             self.root, 
             wrap=tk.WORD,
@@ -20,13 +26,13 @@ class ConsoleEmulator:
         self.output_area.pack(expand=True, fill='both')
         self.output_area.config(state='disabled')
         
-        # Поле ввода
+        # Настраиваем панель ввода
         self.input_frame = tk.Frame(self.root)
         self.input_frame.pack(fill='x', padx=5, pady=5)
-        
+        # Настраиваем заголовок для поля ввода
         self.prompt = tk.Label(self.input_frame, text="$ ", fg='green')
         self.prompt.pack(side='left')
-        
+        # Настраиваем поле ввода
         self.input_field = tk.Entry(self.input_frame, bg='black', fg='white')
         self.input_field.pack(side='left', fill='x', expand=True)
         self.input_field.bind('<Return>', self.execute_command)
@@ -34,11 +40,14 @@ class ConsoleEmulator:
         self.current_directory = "~"
         
     def execute_command(self, event):
+        # Получаем введённую пользователем команду
         command = self.input_field.get()
+        # Очищаем поле ввода
         self.input_field.delete(0, tk.END)
         
-        # Вывод команды в консоль
-        self.append_text(f"$ {command}\n")
+        # Выводим команду пользователя в консоль, указывая время отправки для удобства
+        time = datetime.now()
+        self.append_text(f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n")
         
         # Здесь можно добавить обработку команд
         if command.strip() == 'clear':
@@ -49,12 +58,16 @@ class ConsoleEmulator:
             self.append_text(f"Команда '{command}' не распознана\n")
     
     def append_text(self, text):
+        # Включаем поле вывода и добавляем в конец переданный текст
         self.output_area.config(state='normal')
         self.output_area.insert(tk.END, text)
+        # Переводим положение в конец (чтобы добавленный текст был виден)
         self.output_area.see(tk.END)
+        # Отключаем поле вывода
         self.output_area.config(state='disabled')
     
     def clear_console(self):
+        # Включаем поле вывода, очищаем его, затем отключаем
         self.output_area.config(state='normal')
         self.output_area.delete(1.0, tk.END)
         self.output_area.config(state='disabled')
@@ -62,7 +75,7 @@ class ConsoleEmulator:
     def run(self):
         self.root.mainloop()
 
-# Запуск эмулятора
+# Запускаем окно Эмулятора консоли, если программа запущена напрямую (не в тестах)
 if __name__ == "__main__":
     console = ConsoleEmulator()
     console.run()
