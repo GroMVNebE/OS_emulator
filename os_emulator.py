@@ -5,7 +5,7 @@ import getpass
 import platform
 
 
-STRIP_BLACKLIST = ['echo']
+SPLIT_BLACKLIST = ['echo']
 
 
 class ConsoleEmulator:
@@ -91,10 +91,12 @@ def parse_command(console: ConsoleEmulator, raw_command: str):
     # Получаем команду
     command = raw_command.split()[0].strip()
     # Получаем и обрабатываем аргументы
-    args = raw_command.split()[1:]
-    if command not in STRIP_BLACKLIST:
+    if command not in SPLIT_BLACKLIST:
+        args = raw_command.split()[1:]
         for i in range(len(args)):
             args[i] = args[i].strip()
+    else:
+        args = raw_command.replace(command + ' ', '', 1)
     # Запускаем обработку команды
     process_command(console, command, args)
 
@@ -117,10 +119,7 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
     if command == 'clear':
         console.clear_console()
     elif command == 'echo':
-        out = ''
-        for i in range(len(args)):
-            out += args[i]
-        console.append_text(out + '\n')
+        console.append_text(args + '\n')
     else:
         console.append_text(f"Команда '{command}' не распознана\n")
 
