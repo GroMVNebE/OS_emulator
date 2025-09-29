@@ -4,6 +4,13 @@ from datetime import datetime
 import getpass
 import platform
 import os
+from dotenv import load_dotenv, set_key
+from datetime import datetime
+import csv
+from typing import Literal
+import sys
+
+load_dotenv()
 
 
 SPLIT_BLACKLIST = ['echo']
@@ -36,6 +43,9 @@ class ConsoleEmulator:
         self.output_area.tag_configure("symlink", foreground="#00FFFF")
         self.output_area.tag_configure("normal", foreground="#FFFFFF")
         self.output_area.tag_configure("error", foreground="#FF0000")
+        self.append_text(f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
+        self.append_text(f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
+        self.append_text(f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
         self.output_area.config(state='disabled')
 
         # Настраиваем панель ввода
@@ -50,6 +60,16 @@ class ConsoleEmulator:
         self.input_field.bind('<Return>', self.execute_command)
 
         self.current_directory = "~"
+
+        if os.environ['start-script']:
+            if os.path.exists(os.environ['start-script']):
+                file = open(os.environ['start-script'], encoding='utf-8')
+                for line in file:
+                    try:
+                        parse_command(self, line)
+                    except Exception as e:
+                        self.append_text(f'Произошла ошибка {e}!', 'error')
+                        break
 
     def execute_command(self, event):
         # Получаем введённую пользователем команду
@@ -111,6 +131,23 @@ def parse_command(console: ConsoleEmulator, raw_command: str):
 
 
 def parse_env_variable(console: ConsoleEmulator, inp: str | list):
+    """
+    #### Описание:
+
+    Функция для парсинга **переменных окружения среды** среди аргументов
+
+    #### Параметры:
+
+    console - Объект класса ***ConsoleEmulator***, эмулятор консоли
+
+    inp - ***входные данные в виде строки или списка***, среди которых нужно найти **переменные среды**
+
+    #### Возвращаемое значение:
+
+    Возвращает изменённый **inp**, в котором подходящие переменные заменены на их значения
+
+    Возвращает **None** в случае ошибки
+    """
     if type(inp) == str:
         while '$' in inp:
             st = inp.find('$')
@@ -142,6 +179,39 @@ def parse_env_variable(console: ConsoleEmulator, inp: str | list):
             inp[idx] = part
             idx += 1
         return inp
+    
+def send_log(log: str, type: Literal['info', 'error', 'output']):
+    """
+    #### Описание:
+
+    Функция для сохранения логов в csv файле
+
+    #### Параметры:
+
+    log - ***Лог***, который должен быть сохранён
+
+    type - ***Тип лога***: информация, ошибка или вывод
+    """
+    if os.environ['log'] != 'None':
+        if os.path.exists(os.environ['log']):
+            access = False
+            valid = False
+            with open(os.environ['log'], 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file, delimiter=';')
+                access = True
+                if reader.fieldnames == ['time', 'type', 'event']:
+                    valid = True
+            if access and valid:
+                with open(os.environ['log'], 'a', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file, delimiter=';')
+                    time = datetime.now()
+                    writer.writerow([f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
+            elif access:
+                with open(os.environ['log'], 'w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file, delimiter=';')
+                    writer.writerow(['time', 'type', 'event'])
+                    time = datetime.now()
+                    writer.writerow([f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
 
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
@@ -158,6 +228,13 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
 
     args – список аргументов
     """
+    raw_command = command
+    if type(args) == list:
+        for arg in args:
+            raw_command += ' ' + arg
+    elif type(args) == str:
+        raw_command += args
+    send_log(raw_command, 'info')
 
     if args != None:
         args = parse_env_variable(console, args)
@@ -198,15 +275,66 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             current_dir = os.getcwd()
             full_path = os.path.join(current_dir)
             console.root.title(f"Эмулятор - [{username}@{device_name}]     {full_path}")
-                    
         except Exception as e:
-            console.append_text(f"Произошла ошибка: {e}", 'error')
+            console.append_text(f"Произошла ошибка: {e}\n", 'error')
     elif command == 'exit':
         exit()
+    elif command == 'config':
+        if len(args) == 0:
+            console.append_text(f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
+            console.append_text(f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
+            console.append_text(f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
+            return
+        for arg in args:
+            if '=' not in arg or arg.count('"') != 2:
+                console.append_text(f'Неверный формат записи аргумента: {arg}. Требуется: --arg="Path"\n', 'error')
+                return
+            subcom = arg.split('=')[0]
+            subarg = arg.split('=')[1]
+            if type(subarg) != str:
+                console.append_text('В качестве пути требуется указать строку!\n', 'error')
+                return
+            subarg = subarg.replace('"', '')
+            if subcom == '--vfs':
+                if os.path.exists(subarg):
+                    if '.' not in subarg or subarg.split('.')[-1] != 'csv':
+                        console.append_text(f'В качестве VFS требуется указывать .csv файл!\n', 'error')
+                        return
+                    set_key('.env', 'VFS', subarg)
+                    load_dotenv(override=True)
+                    console.append_text(f'Путь к VFS: "{subarg}"\n')
+                else:
+                    console.append_text(f'Файл {subarg} не найден!\n', 'error')
+                    return
+            elif subcom == '--log':
+                if os.path.exists(subarg):
+                    if '.' not in subarg or subarg.split('.')[-1] != 'csv':
+                        console.append_text(f'В качестве log-файла требуется указывать .csv файл!\n', 'error')
+                        return
+                    set_key('.env', 'log', subarg)
+                    load_dotenv(override=True)
+                    console.append_text(f'Путь к log-файлу: "{subarg}"\n')
+                else:
+                    console.append_text(f'Файл {subarg} не найден!\n', 'error')
+                    return
+            elif subcom == '--start':
+                if os.path.exists(subarg):
+                    if '.' not in subarg or subarg.split('.')[-1] != 'txt':
+                        console.append_text(f'В качестве start-файла требуется указывать .txt файл!\n', 'error')
+                        return
+                    set_key('.env', 'start-script', subarg)
+                    load_dotenv(override=True)
+                    console.append_text(f'Путь к start-файлу: "{subarg}"\n')
+                else:
+                    console.append_text(f'Файл {subarg} не найден!\n', 'error')
+                    return
+            else:
+                console.append_text(f'Неверный аргумент: {subcom}\n', 'error')
+                return
     else:
         console.append_text(f"Команда '{command}' не распознана\n", 'error')
 
-    # Запускаем окно Эмулятора консоли, если программа запущена напрямую (не в тестах)
+# Запускаем окно Эмулятора консоли, если программа запущена напрямую (не в тестах)
 if __name__ == "__main__":
     console = ConsoleEmulator()
     console.run()
