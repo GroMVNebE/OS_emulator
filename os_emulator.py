@@ -8,7 +8,7 @@ from dotenv import load_dotenv, set_key
 from datetime import datetime
 import csv
 from typing import Literal
-import sys
+from base64 import b64encode, b64decode
 
 load_dotenv()
 
@@ -23,9 +23,8 @@ class ConsoleEmulator:
         # Получаем имя пользователя и название компьютера
         username = getpass.getuser()
         device_name = platform.node()
-        current_dir = os.getcwd()
-        full_path = os.path.join(current_dir)
-        self.root.title(f"Эмулятор - [{username}@{device_name}]     {full_path}")
+        self.current_directory = '~'
+        self.root.title(f"Эмулятор - [{username}@{device_name}]     {self.current_directory}")
 
         # Настраиваем поле вывода
         # В нём будет отображаться история команд
@@ -39,8 +38,8 @@ class ConsoleEmulator:
         )
         self.output_area.pack(expand=True, fill='both')
         self.output_area.tag_configure("directory", foreground="#87CEEB")
-        self.output_area.tag_configure("executable", foreground="#00FF00")
-        self.output_area.tag_configure("symlink", foreground="#00FFFF")
+        self.output_area.tag_configure("file", foreground="#00FF9D")
+        self.output_area.tag_configure("input", foreground="#4D8DC2")
         self.output_area.tag_configure("normal", foreground="#FFFFFF")
         self.output_area.tag_configure("error", foreground="#FF0000")
         self.append_text(f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
@@ -79,7 +78,7 @@ class ConsoleEmulator:
 
         # Выводим команду пользователя в консоль, указывая время отправки для удобства
         time = datetime.now()
-        self.append_text(f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n")
+        self.append_text(f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n", 'input')
         
         # Обрабатываем команду
         parse_command(self, command)
@@ -213,6 +212,108 @@ def send_log(log: str, type: Literal['info', 'error', 'output']):
                     time = datetime.now()
                     writer.writerow([f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
 
+class Component():
+
+    path: str
+    """**Путь** к файлу/директории"""
+    name: str
+    """**Имя** файла/директории"""
+    type: str
+    """**Тип** компонента: ***Файл/Директория***"""
+
+    def __init__(self, path: str, name: str, type: str, content: str):
+        self.path = path
+        self.name = name
+        self.type = type
+        self.content = content
+
+    def view_file(self):
+        if self.type == 'file':
+            return b64decode(self.content).decode()
+
+
+def get_directory_content(path_to_dir: str):
+    """
+    #### Описание:
+
+    Функция для получения содержимого директории
+
+    #### Параметры:
+
+    path_to_dir – Путь к директории
+
+    #### Возвращаемое значение:
+
+    Возвращает список компонентов (***директорий/файлов***), расположенных по переданному пути
+
+    Возвращает **None** в случае ошибки
+    """
+    files = None
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            files = []
+            with open(os.environ['VFS'], 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file, delimiter=';')
+                if reader.fieldnames == ['path', 'filename', 'type', 'content']:
+                    for row in reader:
+                        if row['path'] == path_to_dir:
+                            files.append(Component(row['path'], row['filename'], row['type'], row['content']))
+    return files
+
+def exist_directory(path_to_dir: str):
+    """
+    #### Описание:
+
+    Функция для проверки существования директории
+
+    #### Параметры:
+
+    path_to_dir – Путь к директории
+
+    #### Возвращаемое значение:
+
+    Возвращает **True/False** в зависимости от существования директории
+    """
+    exists = False
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            with open(os.environ['VFS'], 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file, delimiter=';')
+                if reader.fieldnames == ['path', 'filename', 'type', 'content']:
+                    for row in reader:
+                        if row['path'] == path_to_dir or (row['path'] + row['filename'] + '/' == path_to_dir and row['type'] == 'directory'):
+                            exists = True
+                            return exists
+    return exists
+
+def parse_rel_path(path: str, cur_path: str):
+    """
+    #### Описание:
+
+    Функция для парсинга относительного пути и конвертации его в абсолютный
+
+    #### Параметры:
+
+    path - **Переданный** путь
+
+    cur_path - ***Текущий*** путь
+
+    #### Возвращаемое значение:
+
+    Возвращает ***абсолютный путь***
+    """
+    parts = path.split('/')
+    for part in parts:
+        if part == '..':
+            cur_path = cur_path[0:cur_path.rfind('/')]
+        if part == '.':
+            cur_path = cur_path
+        else:
+            if exist_directory(cur_path + '/' + part + '/'):
+                cur_path = cur_path + '/' + part
+    return cur_path
+        
+    
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
     """
@@ -245,38 +346,26 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
     elif command == 'echo':
         console.append_text(args + '\n')
     elif command == 'ls':
-        try:
-            current_dir = os.getcwd()
-            items = os.listdir(current_dir)
-            items.sort()
-            
-            for item in items:
-                full_path = os.path.join(current_dir, item)
-                
-                if os.path.isdir(full_path):
-                    console.append_text(item + '\n', 'directory')
-                elif os.path.islink(full_path):
-                    console.append_text(item + '\n', 'symlink')
-                elif os.access(full_path, os.X_OK):
-                    console.append_text(item + '\n', 'executable')
-                else:
-                    console.append_text(item + '\n', 'normal')
-                    
-        except Exception as e:
-            console.append_text(f"Произошла ошибка: {e}", 'error')
+        files: list[Component] = get_directory_content(console.current_directory + '/')
+        if files:
+            for file in files:
+                console.append_text(f'{file.name}\n', file.type)
     elif command == 'cd':
-        if args == []:
-            console.append_text(f"cd требуется указать пункт", 'error')
+        if len(args) != 1:
+            console.append_text('В качестве аргумента команды требуется указать путь к файлу\n', 'error')
             return
-        try:
-            os.chdir(args[0])
+        while args[0] != '' and args[0][-1] == '/':
+            args[0] = args[0][0:-1]
+        if args[0] == '':
+            return
+        if args[0][0] != '~':
+            args[0] = parse_rel_path(args[0], console.current_directory)
+        if exist_directory(args[0] + '/'):
+            console.current_directory = args[0]
             username = getpass.getuser()
             device_name = platform.node()
-            current_dir = os.getcwd()
-            full_path = os.path.join(current_dir)
-            console.root.title(f"Эмулятор - [{username}@{device_name}]     {full_path}")
-        except Exception as e:
-            console.append_text(f"Произошла ошибка: {e}\n", 'error')
+            console.root.title(f"Эмулятор - [{username}@{device_name}]     {console.current_directory}")
+
     elif command == 'exit':
         exit()
     elif command == 'config':
