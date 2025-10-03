@@ -93,10 +93,18 @@ class ConsoleEmulator:
         # Отключаем поле вывода
         self.output_area.config(state='disabled')
 
-    def clear_console(self):
+    def clear_console(self, count = None):
         # Включаем поле вывода, очищаем его, затем отключаем
         self.output_area.config(state='normal')
-        self.output_area.delete(1.0, tk.END)
+        if count:
+            st = float(self.output_area.index(tk.END)) - (count + 2)
+            if st < 1.0:
+                st = 1.0
+        else:
+            st = 1.0
+        self.output_area.delete(st, tk.END)
+        if st != 1.0:
+            self.append_text('\n')
         self.output_area.config(state='disabled')
 
     def run(self):
@@ -309,11 +317,8 @@ def parse_rel_path(path: str, cur_path: str):
         if part == '.':
             cur_path = cur_path
         else:
-            if exist_directory(cur_path + '/' + part + '/'):
-                cur_path = cur_path + '/' + part
+            cur_path = cur_path + '/' + part
     return cur_path
-        
-    
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
     """
@@ -342,14 +347,58 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
         if args == None:
             return
     if command == 'clear':
-        console.clear_console()
+        if len(args) == 0:
+            console.clear_console()
+        elif len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text('-h/--help - отобразить помощь по использованию команды\n-с=N/--count=N - удалить N последних строк в консоли\nБез аргументов - очистить консоль\n')
+            if '=' in args[0]:
+                subcom = args[0].split('=')[0]
+                subarg = args[0].split('=')[1]
+                if subcom == '-c' or subcom == '--count':
+                    n = None
+                    try:
+                        n = int(subarg)
+                    except Exception as e:
+                        console.append_text('Требуется указать целое число строк\n', 'error')
+                        return
+                    if n != None:
+                        console.clear_console(n)
+                else:
+                    console.append_text(f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+            else:
+                console.append_text(f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+        else:
+            console.append_text('Команда clear поддерживает только 1 аргумент', 'error')
     elif command == 'echo':
         console.append_text(args + '\n')
     elif command == 'ls':
-        files: list[Component] = get_directory_content(console.current_directory + '/')
-        if files:
-            for file in files:
-                console.append_text(f'{file.name}\n', file.type)
+        if len(args) == 0:
+            console.append_text(f'Содержимое {console.current_directory}\n')
+            files: list[Component] = get_directory_content(console.current_directory + '/')
+            if files:
+                for file in files:
+                    console.append_text(f'{file.name}\n', file.type)
+        elif len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text('-h/--help - отобразить помощь по использованию команды\nПуть/к/файлу - просмотреть содержимое по указанному пути\nБез аргументов - просмотреть содержимое текущей директории\n')
+            else:
+                while args[0] != '' and args[0][-1] == '/':
+                    args[0] = args[0][0:-1]
+                if args[0] == '':
+                    return
+                if args[0][0] != '~':
+                    args[0] = parse_rel_path(args[0], console.current_directory)
+                if exist_directory(args[0] + '/'):
+                    console.append_text(f'Содержимое {args[0] + "/"}\n')
+                    files: list[Component] = get_directory_content(args[0] + '/')
+                    if files:
+                        for file in files:
+                            console.append_text(f'{file.name}\n', file.type)
+                else:
+                    console.append_text(f'Не найдена директория {args[0] + "/"}\n', 'error')
+        else:
+            console.append_text('Команда ls поддерживает только 1 аргумент', 'error')
     elif command == 'cd':
         if len(args) != 1:
             console.append_text('В качестве аргумента команды требуется указать путь к файлу\n', 'error')
