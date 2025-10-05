@@ -24,7 +24,8 @@ class ConsoleEmulator:
         username = getpass.getuser()
         device_name = platform.node()
         self.current_directory = '~'
-        self.root.title(f"Эмулятор - [{username}@{device_name}]     {self.current_directory}")
+        self.root.title(
+            f"Эмулятор - [{username}@{device_name}]     {self.current_directory}")
 
         # Настраиваем поле вывода
         # В нём будет отображаться история команд
@@ -42,9 +43,12 @@ class ConsoleEmulator:
         self.output_area.tag_configure("input", foreground="#4D8DC2")
         self.output_area.tag_configure("normal", foreground="#FFFFFF")
         self.output_area.tag_configure("error", foreground="#FF0000")
-        self.append_text(f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
-        self.append_text(f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
-        self.append_text(f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
+        self.append_text(
+            f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
+        self.append_text(
+            f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
+        self.append_text(
+            f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
         self.output_area.config(state='disabled')
 
         # Настраиваем панель ввода
@@ -78,12 +82,12 @@ class ConsoleEmulator:
 
         # Выводим команду пользователя в консоль, указывая время отправки для удобства
         time = datetime.now()
-        self.append_text(f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n", 'input')
-        
+        self.append_text(
+            f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n", 'input')
+
         # Обрабатываем команду
         parse_command(self, command)
-        
-    
+
     def append_text(self, text, tag='normal'):
         # Включаем поле вывода и добавляем в конец переданный текст
         self.output_area.config(state='normal')
@@ -93,7 +97,7 @@ class ConsoleEmulator:
         # Отключаем поле вывода
         self.output_area.config(state='disabled')
 
-    def clear_console(self, count = None):
+    def clear_console(self, count=None):
         # Включаем поле вывода, очищаем его, затем отключаем
         self.output_area.config(state='normal')
         if count:
@@ -165,7 +169,8 @@ def parse_env_variable(console: ConsoleEmulator, inp: str | list):
             if var == "$HOME":
                 inp = inp.replace(var, 'C:/', 1)
             else:
-                console.append_text(f"Переменная '{var}' не распознана\n", 'error')
+                console.append_text(
+                    f"Переменная '{var}' не распознана\n", 'error')
                 return None
         return inp
     else:
@@ -181,12 +186,14 @@ def parse_env_variable(console: ConsoleEmulator, inp: str | list):
                 if var == "$HOME":
                     part = part.replace(var, 'C:/', 1)
                 else:
-                    console.append_text(f"Переменная '{var}' не распознана\n", 'error')
+                    console.append_text(
+                        f"Переменная '{var}' не распознана\n", 'error')
                     return None
             inp[idx] = part
             idx += 1
         return inp
-    
+
+
 def send_log(log: str, type: Literal['info', 'error', 'output']):
     """
     #### Описание:
@@ -212,13 +219,16 @@ def send_log(log: str, type: Literal['info', 'error', 'output']):
                 with open(os.environ['log'], 'a', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file, delimiter=';')
                     time = datetime.now()
-                    writer.writerow([f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
+                    writer.writerow(
+                        [f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
             elif access:
                 with open(os.environ['log'], 'w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file, delimiter=';')
                     writer.writerow(['time', 'type', 'event'])
                     time = datetime.now()
-                    writer.writerow([f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
+                    writer.writerow(
+                        [f'[{time.day:02}-{time.month:02}-{time.year:02}  {time.hour:02}:{time.minute:02}:{time.second:02}]', type, log])
+
 
 class Component():
 
@@ -265,8 +275,52 @@ def get_directory_content(path_to_dir: str):
                 if reader.fieldnames == ['path', 'filename', 'type', 'content']:
                     for row in reader:
                         if row['path'] == path_to_dir:
-                            files.append(Component(row['path'], row['filename'], row['type'], row['content']))
+                            files.append(
+                                Component(row['path'], row['filename'], row['type'], row['content']))
     return files
+
+
+def get_file(path_to_file: str):
+    file = None
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            with open(os.environ['VFS'], 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file, delimiter=';')
+                if reader.fieldnames == ['path', 'filename', 'type', 'content']:
+                    for row in reader:
+                        if row['path'] + row['filename'] == path_to_file and row['type'] == 'file':
+                            file = Component(
+                                row['path'], row['filename'], row['type'], row['content'])
+                            return file
+    return file
+
+
+def exist_file(path_to_file: str):
+    """
+    #### Описание:
+
+    Функция для проверки существования директории
+
+    #### Параметры:
+
+    path_to_file – Путь к директории
+
+    #### Возвращаемое значение:
+
+    Возвращает **True/False** в зависимости от существования файла
+    """
+    exists = False
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            with open(os.environ['VFS'], 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file, delimiter=';')
+                if reader.fieldnames == ['path', 'filename', 'type', 'content']:
+                    for row in reader:
+                        if row['path'] + row['filename'] == path_to_file and row['type'] == 'file':
+                            exists = True
+                            return exists
+    return exists
+
 
 def exist_directory(path_to_dir: str):
     """
@@ -294,6 +348,7 @@ def exist_directory(path_to_dir: str):
                             return exists
     return exists
 
+
 def parse_rel_path(path: str, cur_path: str):
     """
     #### Описание:
@@ -319,6 +374,7 @@ def parse_rel_path(path: str, cur_path: str):
         else:
             cur_path = cur_path + '/' + part
     return cur_path
+
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
     """
@@ -351,7 +407,8 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             console.clear_console()
         elif len(args) == 1:
             if args[0] == '-h' or args[0] == '--help':
-                console.append_text('-h/--help - отобразить помощь по использованию команды\n-с=N/--count=N - удалить N последних строк в консоли\nБез аргументов - очистить консоль\n')
+                console.append_text(
+                    '-h/--help - отобразить помощь по использованию команды\n-с=N/--count=N - удалить N последних строк в консоли\nБез аргументов - очистить консоль\n')
             if '=' in args[0]:
                 subcom = args[0].split('=')[0]
                 subarg = args[0].split('=')[1]
@@ -360,48 +417,59 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
                     try:
                         n = int(subarg)
                     except Exception as e:
-                        console.append_text('Требуется указать целое число строк\n', 'error')
+                        console.append_text(
+                            'Требуется указать целое число строк\n', 'error')
                         return
                     if n != None:
                         console.clear_console(n)
                 else:
-                    console.append_text(f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+                    console.append_text(
+                        f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
             else:
-                console.append_text(f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+                console.append_text(
+                    f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
         else:
-            console.append_text('Команда clear поддерживает только 1 аргумент', 'error')
+            console.append_text(
+                'Команда clear поддерживает только 1 аргумент', 'error')
     elif command == 'echo':
         console.append_text(args + '\n')
     elif command == 'ls':
         if len(args) == 0:
             console.append_text(f'Содержимое {console.current_directory}\n')
-            files: list[Component] = get_directory_content(console.current_directory + '/')
+            files: list[Component] = get_directory_content(
+                console.current_directory + '/')
             if files:
                 for file in files:
                     console.append_text(f'{file.name}\n', file.type)
         elif len(args) == 1:
             if args[0] == '-h' or args[0] == '--help':
-                console.append_text('-h/--help - отобразить помощь по использованию команды\nПуть/к/файлу - просмотреть содержимое по указанному пути\nБез аргументов - просмотреть содержимое текущей директории\n')
+                console.append_text(
+                    '-h/--help - отобразить помощь по использованию команды\nПуть/к/файлу - просмотреть содержимое по указанному пути\nБез аргументов - просмотреть содержимое текущей директории\n')
             else:
                 while args[0] != '' and args[0][-1] == '/':
                     args[0] = args[0][0:-1]
                 if args[0] == '':
                     return
                 if args[0][0] != '~':
-                    args[0] = parse_rel_path(args[0], console.current_directory)
+                    args[0] = parse_rel_path(
+                        args[0], console.current_directory)
                 if exist_directory(args[0] + '/'):
                     console.append_text(f'Содержимое {args[0] + "/"}\n')
-                    files: list[Component] = get_directory_content(args[0] + '/')
+                    files: list[Component] = get_directory_content(
+                        args[0] + '/')
                     if files:
                         for file in files:
                             console.append_text(f'{file.name}\n', file.type)
                 else:
-                    console.append_text(f'Не найдена директория {args[0] + "/"}\n', 'error')
+                    console.append_text(
+                        f'Не найдена директория {args[0] + "/"}\n', 'error')
         else:
-            console.append_text('Команда ls поддерживает только 1 аргумент', 'error')
+            console.append_text(
+                'Команда ls поддерживает только 1 аргумент', 'error')
     elif command == 'cd':
         if len(args) != 1:
-            console.append_text('В качестве аргумента команды требуется указать путь к файлу\n', 'error')
+            console.append_text(
+                'В качестве аргумента команды требуется указать путь к файлу\n', 'error')
             return
         while args[0] != '' and args[0][-1] == '/':
             args[0] = args[0][0:-1]
@@ -413,30 +481,115 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             console.current_directory = args[0]
             username = getpass.getuser()
             device_name = platform.node()
-            console.root.title(f"Эмулятор - [{username}@{device_name}]     {console.current_directory}")
-
+            console.root.title(
+                f"Эмулятор - [{username}@{device_name}]     {console.current_directory}")
+    elif command == 'who':
+        if len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text(
+                    'Без аргументов - отобразить текущего пользователя\n-h/--help - отобразить помощь по использованию команды\n')
+            else:
+                console.append_text(
+                    f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+        elif len(args) == 0:
+            username = getpass.getuser()
+            console.append_text(f'Текущий пользователь - {username}\n')
+        else:
+            console.append_text(
+                f'Команда принимает не более 1 аргумента\n', 'error')
+    elif command == 'wc':
+        if len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text(
+                    'Один аргумент (путь к файлу) - отображает кол-во символов, строк и слов\nДва аргумента (путь к файлу, аргумент для вывода)\n-h/--help - отобразить помощь по использованию команды\n-m - показать кол-во символов в файле\n-l - показать кол-во строк в файле\n-w - показать кол-во слов в файле\n')
+            else:
+                while args[0] != '' and args[0][-1] == '/':
+                    args[0] = args[0][0:-1]
+                if args[0] == '':
+                    return
+                if args[0][0] != '~':
+                    args[0] = parse_rel_path(
+                        args[0], console.current_directory)
+                if exist_file(args[0]):
+                    file: Component = get_file(args[0])
+                    content = b64decode(file.content).decode()
+                    while '  ' in content:
+                        content = content.replace('  ', ' ', 1)
+                    lines = content.count("\n") + 1
+                    console.append_text(
+                        f'{len(content)} {lines} {len(content.split())}')
+                else:
+                    console.append_text(
+                        f'Не найден файл {args[0]}\n', 'error')
+        elif len(args) == 2:
+            while args[0] != '' and args[0][-1] == '/':
+                args[0] = args[0][0:-1]
+            if args[0] == '':
+                return
+            if args[0][0] != '~':
+                args[0] = parse_rel_path(
+                    args[0], console.current_directory)
+            if exist_file(args[0]):
+                file: Component = get_file(args[0])
+                content = b64decode(file.content).decode()
+                while '  ' in content:
+                    content = content.replace('  ', ' ', 1)
+                if args[1] in ['-m', '-l', '-w']:
+                    if args[1] == '-m':
+                        console.append_text(f'{len(content)}')
+                    elif args[1] == '-l':
+                        lines = content.count("\n") + 1
+                        console.append_text(f'{lines}')
+                    else:
+                        console.append_text(f'{len(content.split())}')
+                else:
+                    console.append_text(
+                        f'Неизвестный аргумент {args[1]}. Для помощи используйте -h\n', 'error')
+            else:
+                console.append_text(
+                    f'Не найден файл {args[0]}\n', 'error')
+        else:
+            console.append_text(
+                f'Команда принимает не более 2 аргументов\n', 'error')
     elif command == 'exit':
-        exit()
+        if len(args) == 0:
+            exit()
+        elif len(args) == 1 and (args[0] == '-h' or args[0] == '--help'):
+            console.append_text(
+                'Без аргументов - завершить работу Эмулятора\n-h/--help - отобразить помощь по использованию команды\n')
+        else:
+            if len(args) == 1:
+                console.append_text(
+                    f'Неизвестный аргумент {args[0]}. Для помощи введите clear -h\n', 'error')
+            else:
+                console.append_text(
+                    f'Команда принимает не более 1 аргумента\n', 'error')
     elif command == 'config':
         if len(args) == 0:
-            console.append_text(f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
-            console.append_text(f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
-            console.append_text(f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
+            console.append_text(
+                f'Путь к VFS: {os.environ["VFS"] if os.environ["VFS"] != "None" else "не задан"}, можно изменить с помощью config --vfs="Путь/к/файлу/vfs.csv"\n')
+            console.append_text(
+                f'Путь к log-файлу: {os.environ["log"] if os.environ["log"] != "None" else "не задан"}, можно изменить с помощью config --log="Путь/к/файлу/log.csv"\n')
+            console.append_text(
+                f'Путь к стартовому скрипту: {os.environ["start-script"] if os.environ["start-script"] != "None" else "не задан"}, можно изменить с помощью config --start="Путь/к/файлу/start-script.sh"\n')
             return
         for arg in args:
             if '=' not in arg or arg.count('"') != 2:
-                console.append_text(f'Неверный формат записи аргумента: {arg}. Требуется: --arg="Path"\n', 'error')
+                console.append_text(
+                    f'Неверный формат записи аргумента: {arg}. Требуется: --arg="Path"\n', 'error')
                 return
             subcom = arg.split('=')[0]
             subarg = arg.split('=')[1]
             if type(subarg) != str:
-                console.append_text('В качестве пути требуется указать строку!\n', 'error')
+                console.append_text(
+                    'В качестве пути требуется указать строку!\n', 'error')
                 return
             subarg = subarg.replace('"', '')
             if subcom == '--vfs':
                 if os.path.exists(subarg):
                     if '.' not in subarg or subarg.split('.')[-1] != 'csv':
-                        console.append_text(f'В качестве VFS требуется указывать .csv файл!\n', 'error')
+                        console.append_text(
+                            f'В качестве VFS требуется указывать .csv файл!\n', 'error')
                         return
                     set_key('.env', 'VFS', subarg)
                     load_dotenv(override=True)
@@ -447,7 +600,8 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             elif subcom == '--log':
                 if os.path.exists(subarg):
                     if '.' not in subarg or subarg.split('.')[-1] != 'csv':
-                        console.append_text(f'В качестве log-файла требуется указывать .csv файл!\n', 'error')
+                        console.append_text(
+                            f'В качестве log-файла требуется указывать .csv файл!\n', 'error')
                         return
                     set_key('.env', 'log', subarg)
                     load_dotenv(override=True)
@@ -458,7 +612,8 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             elif subcom == '--start':
                 if os.path.exists(subarg):
                     if '.' not in subarg or subarg.split('.')[-1] != 'txt':
-                        console.append_text(f'В качестве start-файла требуется указывать .txt файл!\n', 'error')
+                        console.append_text(
+                            f'В качестве start-файла требуется указывать .txt файл!\n', 'error')
                         return
                     set_key('.env', 'start-script', subarg)
                     load_dotenv(override=True)
@@ -471,6 +626,7 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
                 return
     else:
         console.append_text(f"Команда '{command}' не распознана\n", 'error')
+
 
 # Запускаем окно Эмулятора консоли, если программа запущена напрямую (не в тестах)
 if __name__ == "__main__":
