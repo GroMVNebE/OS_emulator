@@ -359,6 +359,38 @@ def create_dir(dir_name: str, path: str):
                 writer = csv.writer(file, delimiter=';')
                 writer.writerow([path, dir_name, 'directory', None])
 
+def get_all_content():
+    files: list[Component] = get_directory_content('~/')
+    idx = 0
+    while idx < len(files):
+        if files[idx].type == 'directory':
+            files = files.__add__(get_directory_content(files[idx].path + files[idx].name + '/'))
+        idx += 1
+    return files
+
+def remove_dir(dir_name: str, path: str):
+    """
+    #### Описание:
+
+    Функция для удаления директории
+
+    #### Параметры:
+
+    dir_name - **Имя директории**
+
+    path - **Путь**, по которому располагается директория
+    """
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            all_files = get_all_content()
+            deleted_path = path + dir_name
+            with open(os.environ['VFS'], 'w', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file, delimiter=';')
+                writer.writerow(['path', 'filename', 'type', 'content'])
+                for file in all_files:
+                    if file.path.find(deleted_path) != 0 and file.path + file.name != deleted_path:
+                        writer.writerow([file.path, file.name, file.type, file.content])
+
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
     """
@@ -469,6 +501,18 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
                         console.append_text(f'Директория {args[0]} уже существует!\n', 'error')
         else:
             console.append_text('mkdir принимает один аргумент - название директории! Для помощи используйте mkdir -h\n', 'error')
+    elif command == "rm":
+        if len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text('Один аргумент - имя удаляемого файла/директории, -h/--help - отобразить помощь по использованию команды\n')
+            else:
+                if exist_directory(console.current_directory + '/' + args[0] + '/'):
+                    remove_dir(args[0], console.current_directory + '/')
+                    console.append_text('Директория успешно удалена\n')
+                else:
+                    console.append_text(f'Директории {args[0]} не существует!\n', 'error')
+        else:
+            console.append_text('rm принимает один аргумент - название директории! Для помощи используйте rm -h\n', 'error')
 
     elif command == 'exit':
         exit()

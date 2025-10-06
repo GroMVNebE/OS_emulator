@@ -1,4 +1,2 @@
-print('-' > 'a')
-print('-' > 'A')
-print('-' > '0')
-print('-' == '_')
+a = '123'
+print(a.find('23'))
