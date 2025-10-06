@@ -314,11 +314,51 @@ def parse_rel_path(path: str, cur_path: str):
     for part in parts:
         if part == '..':
             cur_path = cur_path[0:cur_path.rfind('/')]
-        if part == '.':
+        elif part == '.':
             cur_path = cur_path
         else:
             cur_path = cur_path + '/' + part
     return cur_path
+
+def check_directory_name(dir_name: str):
+    """
+    #### Описание:
+
+    Функция для проверки имени директории
+
+    #### Параметры:
+
+    dir_name - **Имя директории**
+
+    #### Возвращаемое значение:
+
+    Возвращает **True/False** в завимости от того, соответствует ли имя файла шаблону
+    """
+    correct = True
+    for sym in dir_name:
+        if not(sym >= 'a' and sym <= 'z' or sym >= 'A' and sym <= 'Z' or sym >= '0' and sym <= '9' or sym == '_'):
+            correct = False
+            break
+    return correct
+
+def create_dir(dir_name: str, path: str):
+    """
+    #### Описание:
+
+    Функция для создания директории
+
+    #### Параметры:
+
+    dir_name - **Имя директории**
+
+    path - **Путь**, по которому располагается директория
+    """
+    if os.environ['VFS']:
+        if os.path.exists(os.environ['VFS']):
+            with open(os.environ['VFS'], 'a', newline='', encoding='utf-8') as file:
+                writer = csv.writer(file, delimiter=';')
+                writer.writerow([path, dir_name, 'directory', None])
+
 
 def process_command(console: ConsoleEmulator, command: str, args: list | None):
     """
@@ -414,6 +454,21 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
             username = getpass.getuser()
             device_name = platform.node()
             console.root.title(f"Эмулятор - [{username}@{device_name}]     {console.current_directory}")
+    elif command == "mkdir":
+        if len(args) == 1:
+            if args[0] == '-h' or args[0] == '--help':
+                console.append_text('Один аргумент - имя создаваемой директории, -h/--help - отобразить помощь по использованию команды\n')
+            else:
+                if check_directory_name(args[0]) and exist_directory(console.current_directory + '/' + args[0] + '/') is False:
+                    create_dir(args[0], console.current_directory + '/')
+                    console.append_text('Директория успешно создана\n')
+                else:
+                    if check_directory_name(args[0]) is False:
+                        console.append_text(f'Имя {args[0]} содержит недопустимые символы. Имя директории может состоять только из символов a-Z, 0-9 и "_"\n', 'error')
+                    else:
+                        console.append_text(f'Директория {args[0]} уже существует!\n', 'error')
+        else:
+            console.append_text('mkdir принимает один аргумент - название директории! Для помощи используйте mkdir -h\n', 'error')
 
     elif command == 'exit':
         exit()
