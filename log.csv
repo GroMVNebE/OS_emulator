@@ -205,3 +205,6 @@ time;type;event
 [05-10-2025  13:38:41];info;cd home
 [05-10-2025  13:38:41];info;ls
 [05-10-2025  13:38:45];info;wc text.txt
+[03-10-2025  15:27:31];info;clear -c=t
+[03-10-2025  15:27:35];info;clear-c=1.0
+[03-10-2025  15:27:40];info;clear -c=1.0
