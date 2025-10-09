@@ -665,7 +665,7 @@ def process_command(console: ConsoleEmulator, command: str, args: list | None):
         if len(args) == 1:
             if args[0] == '-h' or args[0] == '--help':
                 console.append_text(
-                    'Один аргумент - имя удаляемого файла/директории, -h/--help - отобразить помощь по использованию команды\n')
+                    'Один аргумент - имя удаляемой директории, -h/--help - отобразить помощь по использованию команды\n')
             else:
                 if exist_directory(console.current_directory + '/' + args[0] + '/'):
                     remove_dir(args[0], console.current_directory + '/')
