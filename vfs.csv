@@ -1,5 +1,5 @@
 path;filename;type;content
 ~/;home;directory;
-~/;user;directory;
 ~/home/;dir;directory;
-~/home/;text.txt;file;'0KLQtdGB0YLQvtCy0LDRjyDRgdGC0YDQvtC60LAg0LjQtyA1INGB0LvQvtCyCtCd0L7QstCw0Y8g0YHRgtGA0L7QutCw'
+~/home/;text.txt;file;'0KLQtdGB0YLQvtCy0LDRjyDRgdGC0YDQvtC60LAg0LjQtyA1INGB0LvQvtCyCtCd0L7QstCw0Y8g0YHRgtGA0L7QutCw'~/home/
+~/home/;test;directory;
