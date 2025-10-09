@@ -374,3 +374,24 @@ time;type;event
 [06-10-2025  16:35:53];info;ls
 [06-10-2025  16:35:55];info;rm test
 [06-10-2025  16:35:56];info;ls
+[09-10-2025  16:46:25];info;ls
+[09-10-2025  16:46:28];info;ls home
+[09-10-2025  16:46:33];info;cd home
+[09-10-2025  16:46:34];info;ls
+[09-10-2025  16:46:38];info;rm test
+[09-10-2025  16:46:42];info;cd ..
+[09-10-2025  16:46:43];info;ls
+[09-10-2025  16:46:46];info;ls home
+[09-10-2025  16:46:49];info;exit
+[09-10-2025  17:11:26];info;config --start=cd_mkdir_test.txt
+[09-10-2025  17:11:54];info;"config --start=""cd_mkdir_test.txt"""
+[09-10-2025  17:11:54];info;mkdir another
+[09-10-2025  17:11:54];info;cd another
+[09-10-2025  17:11:54];info;mkdir other
+[09-10-2025  17:11:54];info;mkdir other1
+[09-10-2025  17:11:54];info;mkdir other2
+[09-10-2025  17:11:54];info;ls
+[09-10-2025  17:12:11];info;cd ..
+[09-10-2025  17:12:12];info;ls
+[09-10-2025  17:12:14];info;cd ..
+[09-10-2025  17:12:15];info;ls

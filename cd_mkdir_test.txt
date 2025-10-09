@@ -1,0 +1,6 @@
+mkdir another
+cd another
+mkdir other
+mkdir other1
+mkdir other2
+ls

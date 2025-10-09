@@ -1,0 +1,6 @@
+path;filename;type;content
+~/;home;directory;
+~/;dir;directory;
+~/;dev;directory;
+~/;bin;directory;
+~/;test;directory;

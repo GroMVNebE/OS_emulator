@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv, set_key
 from datetime import datetime
 import csv
+import sys
 from typing import Literal
 from base64 import b64encode, b64decode
 
@@ -63,12 +64,25 @@ class ConsoleEmulator:
         self.input_field.bind('<Return>', self.execute_command)
 
         self.current_directory = "~"
-
+        if len(sys.argv) > 1:
+            command = ''
+            for i in range(1, len(sys.argv)):
+                if command == '':
+                    command = sys.argv[i]
+                else:
+                    command += ' ' + sys.argv[i]
+            time = datetime.now()
+            self.append_text(
+                f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {command}\n", 'input')
+            parse_command(self, command)
         if os.environ['start-script']:
             if os.path.exists(os.environ['start-script']):
                 file = open(os.environ['start-script'], encoding='utf-8')
                 for line in file:
                     try:
+                        time = datetime.now()
+                        self.append_text(
+                            f"[{time.hour:02}:{time.minute:02}:{time.second:02}]: {line}\n", 'input')
                         parse_command(self, line)
                     except Exception as e:
                         self.append_text(f'Произошла ошибка {e}!', 'error')

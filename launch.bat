@@ -1,0 +1,1 @@
+py -3 os_emulator.py config --start=\"cd_mkdir_test.txt\"
